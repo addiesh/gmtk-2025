@@ -1,0 +1,4 @@
+- Digging for time pieces
+- High-score based game
+- Direction changes
+- Levels

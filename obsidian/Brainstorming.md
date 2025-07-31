@@ -1,0 +1,40 @@
+- out of the loop
+	- management informing workers (fill out your TPS reports!)
+	- social media
+		- manager
+	- newspaper
+		- papers please
+		- editor?
+	- misinformation
+		- branching narrative?
+			- hard to implement!
+- feedback loop
+	- stuck in hell filling out feedback forms
+		- people come up to you and you give them feedback, depending on the feedback they blow up or something
+	- evolution
+		- don't use ML dawg 💀
+- loophole
+	- [[Hole Loop|*hole loop?*]]
+		- digging
+			- for time pieces? extending the time or something
+	- A slit in a castle wall or similar window for shooting a ranged weapon or letting in light
+	- Ambiguity/exception in rule/law that can be exploited to avoid effects
+	- fighting bureaucracy?
+- spiral of ants 
+	- repetition until exhaustion
+	- pheromone track
+- looped film
+- programming loop
+- electric loop
+- task loop? like a daily schedule
+- edge loop (graph theory yay)
+	- social graph
+- train loop/ring road
+	- racecar track
+	- A train/highway surrounding a city?
+	- Trying to break out of the train before it loops around
+- nothing is inevitable but death and taxes
+- cycle of life and death 
+- washing cycle
+- loop knot
+	- "tying the knot"

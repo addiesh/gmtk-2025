@@ -1,0 +1,6 @@
+/target
+*.zip
+*.exe
+*.dll
+*.so
+*.wasm

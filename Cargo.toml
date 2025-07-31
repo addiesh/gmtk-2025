@@ -1,0 +1,31 @@
+[package]
+name = "jam"
+version = "0.0.1-ALPHA"
+edition = "2024"
+readme = "README.md"
+
+[dependencies]
+log = "0.4.27"
+libm = "0.2.15"
+metra = { path = "metra" }
+
+[profile.dev]
+panic = "abort"
+
+[profile.dev.package.'*']
+debug = "none"
+strip = true
+codegen-units = 1
+opt-level = 3
+
+[profile.release]
+panic = "abort"
+codegen-units = 1
+lto = true
+opt-level = 3
+
+[profile.release.package.'*']
+debug = "none"
+strip = true
+codegen-units = 1
+opt-level = 3

@@ -1,0 +1,39 @@
+[package]
+name = "metra"
+description = ""
+version = "0.0.1-ALPHA"
+edition = "2024"
+license = "Apache-2.0"
+# eventually it might be a GitLab repo, but for now we're on GH
+repository = "https://github.com/addiesh/metra"
+readme = "../README.md"
+
+[dependencies]
+libm = "0.2.15"
+# logging facade
+log = "0.4.27"
+# memory allocator
+dlmalloc = { version = "0.2.8", features = ["global"] }
+# serialization
+base64 = { version = "0.22.1", default-features = false, features = ["alloc"] }
+
+[profile.dev]
+panic = "abort"
+
+[profile.dev.package.'*']
+debug = "none"
+strip = true
+codegen-units = 1
+opt-level = 3
+
+[profile.release]
+panic = "abort"
+codegen-units = 1
+lto = true
+opt-level = 3
+
+[profile.release.package.'*']
+debug = "none"
+strip = true
+codegen-units = 1
+opt-level = 3

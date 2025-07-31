@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<link rel="preload" href="game.mjs" as="script" type="text/javascript">
+	<title>Addie's Game (+ engine!)</title>
+	<style>
+		* {
+            font-family: 'Inter Display', system-ui;
+            font-feature-settings: 'liga' 1, 'calt' 1;
+		}
+		html {
+			background-color: #0c1521;
+			color: #fff;
+		}
+
+		html,
+		body {
+			display: block;
+			position: fixed;
+			margin: 0;
+			padding: 0;
+			width: 100%;
+			height: 100%;
+			touch-action: none;
+            -ms-touch-action: none;
+		}
+
+		canvas#game>* {
+			margin: 8px;
+		}
+
+		canvas#game {
+			position: fixed;
+			margin: 0;
+			padding: 0;
+			background-color: #000;
+			touch-action: none;
+			-ms-touch-action: none;
+		}
+
+		body {
+			display: flex;
+			justify-content: center;
+			align-items: center;
+		}
+
+		div#overlay {
+			font-size: 16pt;
+            font-family: 'Inter Display', system-ui;
+            font-feature-settings: 'liga' 1, 'calt' 1, 'tnum' 1;
+			position: fixed;
+			bottom: 16px;
+			left: 16px;
+			padding: 16px;
+			background-color: #000;
+			border-radius: 4px;
+			opacity: 0.0;
+			transition: opacity 100ms ease-out;
+		}
+
+        div#overlay:hover {
+			opacity: 1.0;
+		}
+
+        div#overlay p {
+			margin-top: 2px;
+			margin-bottom: 2px;
+		}
+
+        @media (prefers-color-scheme: light) {
+			html {
+				background-color: #fff;
+				color: #000
+			}
+        }
+	</style>
+</head>
+
+<body>
+<!--
+	Made with Love (Rust) and Hate (JavaScript)
+	(c) addie.sh 2025
+-->
+<canvas id="game">
+	<h1>This game requires JavaScript and WebGL 2</h1>
+	<p>Please enable these features if disabled (or upgrade to a browser that supports them)</p>
+</canvas>
+<div id="overlay">
+	<p>ms/f: &Tab;<span id="overlay-mspf">---</span></p>
+	<p>avg. FPS: &Tab;<span id="overlay-fps">---</span></p>
+	<div id="error-box"></div>
+</div>
+</body>
+
+<script id="data-universal-vertex" type="x-shader/x-vertex">#version 300 es
+precision highp float;
+
+layout(location = 0) in vec2 aPosition;
+
+uniform vec2 translate;
+uniform vec2 size;
+
+out highp vec2 texcoord;
+
+void main() {
+	const vec2 canvasSize = vec2(240.0, 180.0);
+	vec2 pos = (aPosition * 0.5) + 0.5;
+
+	gl_Position = vec4((pos / canvasSize * size * 2.0 - 1.0) + (translate * 2.0 / canvasSize), 0.0, 1.0);
+	texcoord = (aPosition + 1.0) * 0.5;
+}
+</script>
+
+<script id="data-universal-fragment" type="x-shader/x-fragment">#version 300 es
+precision highp float;
+
+uniform sampler2D sprite;
+uniform vec2 size;
+uniform vec2 spriteTranslate;
+uniform vec4 color;
+
+in highp vec2 texcoord;
+out vec4 outColor;
+
+void main() {
+	vec2 sz = vec2(textureSize(sprite, 0));
+	vec2 a = sz / size;
+	vec2 uv = (texcoord / a) + (spriteTranslate / sz);
+//	outColor = vec4(texcoord, 1.0, 1.0) + texture(sprite, uv) * 0.1;
+	outColor = texture(sprite, uv) * color;
+}
+</script>
+<script id="data-post-vertex" type="x-shader/x-vertex">#version 300 es
+precision highp float;
+
+layout(location = 0) in vec2 aPosition;
+out highp vec2 texcoord;
+
+void main() {
+	gl_Position = vec4(aPosition, 0.0, 1.0);
+	texcoord = (aPosition + 1.0) * 0.5;
+}
+</script>
+
+<script id="data-post-fragment" type="x-shader/x-fragment">#version 300 es
+precision highp float;
+
+uniform sampler2D sprite;
+uniform ivec2 viewportSize;
+
+in highp vec2 texcoord;
+out vec4 out_color;
+
+void main() {
+	ivec2 sz = textureSize(sprite, 0);
+	vec2 vsz = vec2(sz);
+	int fX = viewportSize.x / sz.x;
+	int fY = viewportSize.y / sz.y;
+	float minScale = float(min(fX, fY));
+	// we want to center the UVs and go outward
+	vec2 vvs = vec2(viewportSize);
+	vec2 ratio = vvs / minScale / vsz;
+	vec2 offset = (1.0 - ratio) / 2.0;
+	vec2 zz = texcoord * ratio;
+	vec2 ruv = zz + offset;
+	vec2 uv = ruv;
+	if (uv.x > 1.0 || uv.x < 0.0 || uv.y > 1.0 || uv.y < 0.0) {
+		out_color = vec4(0.0);
+	} else {
+		out_color = texture(sprite, uv);
+	}
+}
+</script>
+<script type="module" src="game.mjs" async></script>
+
+</html>
