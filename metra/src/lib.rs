@@ -55,6 +55,24 @@ impl Sprite {
 	}
 }
 
+#[derive(Copy, Clone)]
+pub enum Sound {
+	Vcr,
+	ClickDown,
+	ClickUp,
+}
+
+impl Sound {
+	fn asset_index(&self) -> u32 {
+		match self {
+			Sound::Vcr => 7,
+			Sound::ClickDown => 8,
+			Sound::ClickUp => 9,
+		}
+	}
+}
+
+
 #[derive(Copy, Clone, Eq, PartialEq)]
 pub struct MouseStatus {
 	pub x: i32,
@@ -140,6 +158,13 @@ impl Metra {
 				inner_y,
 				color
 			);
+		}
+	}
+
+	#[inline]
+	pub fn play_sound(&self, sound: Sound) {
+		unsafe {
+			sys::play_sound(sound.asset_index());
 		}
 	}
 

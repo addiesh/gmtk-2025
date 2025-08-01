@@ -85,6 +85,11 @@ unsafe extern "C" {
 		sprite_translate_y: i32,
 		color: u32,
 	);
+	
+	#[link_name = "playSound"]
+	pub fn play_sound(
+		sound_index: u32,
+	);
 
 	#[must_use]
 	#[link_name = "savePersistent"]

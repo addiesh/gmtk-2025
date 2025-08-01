@@ -32,7 +32,8 @@
  * @typedef {Object} EngineAssetSound
  * @prop {string} path A path to the asset.
  * @prop {"sound"} assetType
- * @prop {HTMLAudioElement|null} data
+ * @prop {boolean} drone
+ * @prop {AudioBuffer|null} data
  */
 
 /**
@@ -161,9 +162,23 @@ const assetBank = [
 		tile: true,
 		linear: false,
 	},
+	// 6
 	{
 		assetType: 'sound',
-		path: "assets/chime-a.wav",
+		path: "assets/vcr.opus",
+		drone: false,
+		data: null,
+	},
+	{
+		assetType: 'sound',
+		path: "assets/down.opus",
+		drone: false,
+		data: null,
+	},
+	{
+		assetType: 'sound',
+		path: "assets/up.opus",
+		drone: false,
 		data: null,
 	},
 ];
@@ -356,6 +371,29 @@ gl.framebufferTexture2D(
 
 let startTime = 0;
 
+const actx = new AudioContext();
+
+if (actx.state !== 'running') {
+	const l = async () => {
+		await actx.resume();
+		console.info("Started audio context!");
+		document.removeEventListener('pointermove', l);
+	};
+	document.addEventListener('pointermove', l);
+} else {
+	console.info("Audio context running!");
+}
+
+// let reverb = new ConvolverNode(actx, {
+// 	disableNormalization: false,
+// 	channelCount: 2,
+// 	buffer: await actx.decodeAudioData(await (await fetch("./assets/724871__djericmark__1.wav")).arrayBuffer())
+// });
+let audioShrink = new GainNode(actx, {
+	gain: 0.2
+});
+audioShrink.connect(actx.destination);
+
 // noinspection JSUnusedGlobalSymbols
 const importObject = {
 	addie: {
@@ -463,6 +501,26 @@ const importObject = {
 		},
 
 		/**
+		 * @param {number} soundIndex
+		 */
+		playSound: function (soundIndex) {
+			let entry = assetBank[soundIndex];
+			if (entry.assetType === 'sound') {
+				if (entry.drone !== false) {
+					console.error("no engine support for music/drone currently");
+				}
+				if (actx.state === 'running') {
+					let node = actx.createBufferSource();
+					node.buffer = entry.data;
+					node.connect(audioShrink);
+					node.start();
+				}
+			} else {
+				throw new Error();
+			}
+		},
+
+		/**
 		 * @param {number} translateX
 		 * @param {number} translateY
 		 * @param {number} sizeW
@@ -505,6 +563,7 @@ const importObject = {
 	}
 };
 
+// loading
 {
 	console.info("Loading...");
 	console.group("Loading steps");
@@ -527,21 +586,17 @@ const importObject = {
 			switch (assetEntry.assetType) {
 				case "sound": {
 					console.info(`Loading sound file from "${canonicalPath}"`);
-					let audioElement = new Audio(canonicalPath);
-					audioElement.preload = "auto";
-					return await new Promise((resolve, reject) => {
-						audioElement.addEventListener('error', err => {
-							let delta = performance.now() - bt;
-							console.error(`Failed to load sound "${assetId}" from ${assetEntry.path} after ${delta}ms!`);
-							reject(err);
-						});
-						audioElement.addEventListener('canplaythrough', () => {
-							let delta = performance.now() - bt;
-							console.info(`Loaded sound "${assetId}" from ${assetEntry.path} in ${delta}ms`);
-							assetBank[assetId].data = audioElement;
-							resolve();
-						});
-					});
+					try {
+						let res = await fetch(canonicalPath);
+						assetBank[assetId].data = await actx.decodeAudioData(await res.arrayBuffer())
+						let delta = performance.now() - bt;
+						console.info(`Loaded sound "${assetId}" from ${assetEntry.path} in ${delta}ms`);
+						return;
+					} catch (e) {
+						let delta = performance.now() - bt;
+						console.error(`Failed to load sound "${assetId}" from ${assetEntry.path} after ${delta}ms!`);
+						throw e;
+					}
 				}
 				case "texture": {
 					console.info(`Loading texture from "${canonicalPath}"`);
@@ -628,6 +683,7 @@ let mouseStatus = 0;
 			mouseStatus = 1;
 		}
 	});
+
 	canvas.addEventListener('pointermove', ev => {
 		mousePosX = ev.offsetX;
 		mousePosY = ev.offsetY;
