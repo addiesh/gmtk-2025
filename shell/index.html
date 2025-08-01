@@ -39,6 +39,11 @@
 			background-color: #000;
 			touch-action: none;
 			-ms-touch-action: none;
+            /*noinspection CssOverwrittenProperties*/
+            image-rendering: crisp-edges;
+            /*noinspection CssOverwrittenProperties*/
+            image-rendering: pixelated;
+            cursor: none;
 		}
 
 		body {
@@ -109,7 +114,8 @@ void main() {
 	const vec2 canvasSize = vec2(240.0, 180.0);
 	vec2 pos = (aPosition * 0.5) + 0.5;
 
-	gl_Position = vec4((pos / canvasSize * size * 2.0 - 1.0) + (translate * 2.0 / canvasSize), 0.0, 1.0);
+	vec2 realPos = (pos / canvasSize * size * 2.0 - 1.0) + (translate * 2.0 / canvasSize);
+	gl_Position = vec4(realPos, 0.0, 1.0);
 	texcoord = (aPosition + 1.0) * 0.5;
 }
 </script>
@@ -128,9 +134,8 @@ out vec4 outColor;
 void main() {
 	vec2 sz = vec2(textureSize(sprite, 0));
 	vec2 a = sz / size;
-	vec2 uv = (texcoord / a) + (spriteTranslate / sz);
-//	outColor = vec4(texcoord, 1.0, 1.0) + texture(sprite, uv) * 0.1;
-	outColor = texture(sprite, uv) * color;
+	vec2 uv = (texcoord / a) + (vec2(spriteTranslate.x, (sz.y - size.y) + spriteTranslate.y) / sz);
+	outColor = texture(sprite, uv) * color;// + vec4(0.5, 0.5, 0.5, 0.5);
 }
 </script>
 <script id="data-post-vertex" type="x-shader/x-vertex">#version 300 es

@@ -1,6 +1,8 @@
 //! Client implementation of the Metra Engine for WASM.
 //! This code has all been written by-hand, with love.
 
+use crate::{VIEWPORT_HEIGHT, VIEWPORT_WIDTH};
+
 #[derive(Copy, Clone, Eq, PartialEq)]
 #[repr(u32)]
 pub enum BufferType {
@@ -44,9 +46,9 @@ impl From<log::Level> for LogLevel {
 }
 
 #[unsafe(export_name = "exposedMousePosX")]
-pub static mut EXPOSED_MOUSE_POS_X: i32 = 0;
+pub static mut EXPOSED_MOUSE_POS_X: i32 = VIEWPORT_WIDTH as i32 / 2;
 #[unsafe(export_name = "exposedMousePosY")]
-pub static mut EXPOSED_MOUSE_POS_Y: i32 = 0;
+pub static mut EXPOSED_MOUSE_POS_Y: i32 = VIEWPORT_HEIGHT as i32 / 2;
 #[unsafe(export_name = "exposedMouseStatus")]
 pub static mut EXPOSED_MOUSE_STATUS: u32 = 0;
 
@@ -79,8 +81,8 @@ unsafe extern "C" {
 		size_w: i32,
 		size_h: i32,
 		sprite_index: u32,
-		sprite_translate_x: u32,
-		sprite_translate_y: u32,
+		sprite_translate_x: i32,
+		sprite_translate_y: i32,
 		color: u32,
 	);
 

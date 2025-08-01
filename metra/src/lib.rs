@@ -27,25 +27,36 @@ pub mod prelude;
 pub mod resource;
 mod sys;
 
+pub const VIEWPORT_WIDTH: u32 = 240;
+pub const VIEWPORT_HEIGHT: u32 = 180;
+
 pub struct Metra {}
 
 #[derive(Copy, Clone)]
 pub enum Sprite {
 	Atlas,
-	Font,
+	Square,
+	Checker,
+	FontTiny,
+	FontMedium,
+	FontBig,
 }
 
 impl Sprite {
 	fn asset_index(&self) -> u32 {
 		match self {
-			Sprite::Font => 1,
-			Sprite::Atlas => 2,
+			Sprite::FontTiny => 1,
+			Sprite::FontMedium => 2,
+			Sprite::FontBig => 3,
+			Sprite::Atlas => 4,
+			Sprite::Square => 5,
+			Sprite::Checker => 6,
 		}
 	}
 }
 
 #[derive(Copy, Clone)]
-struct MouseStatus {
+pub struct MouseStatus {
 	pub x: i32,
 	pub y: i32,
 	pub status: bool,
@@ -117,7 +128,7 @@ impl Metra {
 	}
 
 	#[inline]
-	pub fn draw(&self, sprite: Sprite, x: i32, y: i32, w: i32, h: i32, inner_x: u32, inner_y: u32, color: u32) {
+	pub fn draw(&self, sprite: Sprite, x: i32, y: i32, w: i32, h: i32, inner_x: i32, inner_y: i32, color: u32) {
 		unsafe {
 			sys::draw(
 				x,

@@ -89,6 +89,7 @@ try {
 	);
 
 	// to prevent layout changes, because otherwise this would run after loading
+	let minScale = 1;
 	resize();
 
 	/** @type {HTMLSpanElement} */
@@ -114,25 +115,51 @@ try {
 	const assetBank = [
 		{
 			assetType: 'texture',
-			// path: "assets/noise.png",
-			path: "assets/change_the_world.jpg",
+			path: "assets/atlas.png",
 			data: null,
 			tile: true,
 			linear: true,
 		},
 		{
 			assetType: 'texture',
-			path: "assets/change_the_world.jpg",
-			// path: "assets/font.png",
+			path: "assets/interface_3x5.png",
 			data: null,
 			tile: false,
 			linear: false,
 		},
 		{
 			assetType: 'texture',
-			path: "assets/test.png",
+			path: "assets/classic_3310.png",
 			data: null,
 			tile: false,
+			linear: false,
+		},
+		{
+			assetType: 'texture',
+			path: "assets/font.png",
+			data: null,
+			tile: false,
+			linear: false,
+		},
+		{
+			assetType: 'texture',
+			path: "assets/atlas.png",
+			data: null,
+			tile: false,
+			linear: false,
+		},
+		{
+			assetType: 'texture',
+			path: "assets/square.png",
+			data: null,
+			tile: true,
+			linear: false,
+		},
+		{
+			assetType: 'texture',
+			path: "assets/checker.png",
+			data: null,
+			tile: true,
 			linear: false,
 		},
 		{
@@ -328,6 +355,8 @@ try {
 		0
 	);
 
+	let startTime = 0;
+
 	// noinspection JSUnusedGlobalSymbols
 	const importObject = {
 		addie: {
@@ -371,7 +400,7 @@ try {
 			 */
 			getTime: function () {
 				// TODO: stub...?
-				return performance.now();
+				return performance.now() - startTime;
 			},
 
 			/**
@@ -581,13 +610,12 @@ try {
 		console.info(`Done loading! Took ${totalDelta}ms total.`);
 	}
 
-	let mousePosX = 0;
-	let mousePosY = 0;
+	let mousePosX = minScale * VIEWPORT_WIDTH / 2;
+	let mousePosY = minScale * VIEWPORT_HEIGHT / 2;
 	let mouseStatus = 0;
 	{
 		/** @type {Map<string, boolean>} */
 		let keyState = new Map();
-
 
 		canvas.addEventListener('keydown', ev => {
 			// e.key
@@ -605,19 +633,16 @@ try {
 			mousePosX = ev.offsetX;
 			mousePosY = ev.offsetY;
 		});
-		canvas.addEventListener('pointerup', ev => {
+		document.addEventListener('pointerup', ev => {
 			mousePosX = ev.offsetX;
 			mousePosY = ev.offsetY;
 			if (ev.button === 0) {
-				mouseStatus = 1;
+				mouseStatus = 0;
 			}
 		});
 	}
 
 	let isRunning = true;
-
-	// initialize stuff
-	context.engine.exports.engineMain();
 
 	/** @type {number[]} */
 	const frametimeRingbuffer = new Array(300).fill(Infinity);
@@ -631,24 +656,24 @@ try {
 		// write to the memory
 
 		(new Int32Array(
-			context.engine.exports.memory,
+			context.engine.exports.memory.buffer,
 			context.engine.exports.exposedMousePosX.value,
 			1
-		))[0] = mousePosX;
+		))[0] = mousePosX / minScale;
 		(new Int32Array(
-			context.engine.exports.memory,
+			context.engine.exports.memory.buffer,
 			context.engine.exports.exposedMousePosY.value,
 			1
-		))[0] = mousePosY;
+		))[0] = VIEWPORT_HEIGHT - mousePosY / minScale;
 		(new Uint32Array(
-			context.engine.exports.memory,
+			context.engine.exports.memory.buffer,
 			context.engine.exports.exposedMouseStatus.value,
 			1
 		))[0] = mouseStatus;
 
 		gl.bindFramebuffer(gl.FRAMEBUFFER, gameFramebuffer);
 		gl.viewport(0, 0, VIEWPORT_WIDTH, VIEWPORT_HEIGHT);
-		gl.clearColor(0, 0, 0, 1);
+		gl.clearColor(0.9, 0.87, 0.81, 1);
 		gl.clear(gl.COLOR_BUFFER_BIT);
 		// gl.enable(gl.DEPTH_TEST);
 		// gl.enable(gl.CULL_FACE);
@@ -707,7 +732,7 @@ try {
 		let bounds= document.body.getBoundingClientRect();
 		let fw = Math.floor(bounds.width * window.devicePixelRatio / VIEWPORT_WIDTH);
 		let fh = Math.floor(bounds.height * window.devicePixelRatio / VIEWPORT_HEIGHT);
-		let minScale = Math.min(fw, fh);
+		minScale = Math.min(fw, fh);
 		let realW = minScale * VIEWPORT_WIDTH;
 		let realH = minScale * VIEWPORT_HEIGHT;
 		canvas.width = realW;
@@ -715,6 +740,12 @@ try {
 	}
 
 	window.addEventListener('resize', resize);
+
+	startTime = performance.now();
+	console.info(`Started game loop @ ${startTime}ms`);
+
+	// initialize stuff
+	context.engine.exports.engineMain();
 
 	requestAnimationFrame(update);
 } catch (
