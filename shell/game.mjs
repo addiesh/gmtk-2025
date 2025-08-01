@@ -81,7 +81,7 @@ const canvas = document.getElementById('game');
 const gl = canvas.getContext(
 	'webgl2',
 	{
-		alpha: false,
+		alpha: true,
 		antialias: false,
 		depth: false,
 		powerPreference: "high-performance",
@@ -374,12 +374,13 @@ let startTime = 0;
 const actx = new AudioContext();
 
 if (actx.state !== 'running') {
+	console.warn("Wasn't able to start the audio context, sounds queued before/during the first click will be dropped");
 	const l = async () => {
 		await actx.resume();
 		console.info("Started audio context!");
-		document.removeEventListener('pointermove', l);
+		document.removeEventListener('pointerdown', l);
 	};
-	document.addEventListener('pointermove', l);
+	document.addEventListener('pointerdown', l);
 } else {
 	console.info("Audio context running!");
 }

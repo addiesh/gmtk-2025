@@ -202,7 +202,7 @@ impl Font {
 			(14, '#'),
 			(14, '*'),
 			(4, '.'),
-			(4, ','),
+			(5, ','),
 			(21, '\0'),
 		])
 	};
@@ -352,19 +352,15 @@ pub fn measure_string(font: Font, string: &str) -> (u32, u32) {
 			pos += kern;
 		}
 		pos += metric.width as u16;
+		if font == Font::Big && ch == ',' {
+			pos -= 1;
+		};
 	}
 
 	(pos as _, font.height() * lines + line_spacing * (lines - 1))
 }
 
-pub fn draw_string(
-	engine: &mut Metra,
-	font: Font,
-	string: &str,
-	x: i32,
-	y: i32,
-	color: u32,
-) -> (u32, u32) {
+pub fn draw_string(engine: &mut Metra, font: Font, string: &str, x: i32, y: i32, color: u32) -> (u32, u32) {
 	let mut lines = { string.chars().filter(|ch| *ch == '\n').count() as i32 };
 	let mut pos: u16 = 0;
 	let space = match font {
@@ -399,6 +395,9 @@ pub fn draw_string(
 			continue;
 		}
 		let metric = font.glyph_metric(ch);
+		if font == Font::Big && ch == ',' {
+			pos = pos.saturating_sub(1);
+		};
 		engine.draw(
 			font.sprite(),
 			pos as i32 + x,

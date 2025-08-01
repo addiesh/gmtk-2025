@@ -42,15 +42,10 @@ enum GameMode {
 #[derive(Copy, Clone)]
 struct GameState {
 	mode: GameMode,
-	last_mouse: MouseStatus,
 }
 
 fn ease(n: f64) -> f64 {
-	if n >= 0.8 {
-		1.0
-	} else {
-		1.0 - pow(2.0, -10.0 * n)
-	}
+	if n >= 0.8 { 1.0 } else { 1.0 - pow(2.0, -11.0 * n) }
 }
 
 fn init(engine: &mut Metra) -> GameState {
@@ -64,11 +59,6 @@ fn init(engine: &mut Metra) -> GameState {
 			start_button: Button::new(Font::Big, "start", true),
 			credits_button: Button::new(Font::Big, "credits", true),
 		}),
-		last_mouse: MouseStatus {
-			status: false,
-			x: 0,
-			y: 0,
-		},
 	}
 }
 
@@ -112,34 +102,32 @@ fn update(state: &mut GameState, engine: &mut Metra) -> MetraStatus {
 			let tx = (ease(transition_delta / 1200.0) * (hw + 8.0) - hw) as _;
 			draw_string(engine, Font::Big, t1, tx, ty, color);
 			let rw = ease(transition_delta / 1500.0);
-			engine.draw(
-				Sprite::Square,
-				tx,
-				ty - 4,
-				(rw * w as f64) as i32,
-				2,
-				0,
-				0,
-				color,
-			);
+			let underline_y = ty - 4;
+			// underline bar
+			engine.draw(Sprite::Square, tx, underline_y, (rw * w as f64) as i32, 2, 0, 0, color);
 
 			let bg = 0xd74885ff;
 			let fg = 0xE6DECFFF;
 
-			let b1 = "start";
-			let start_button_x = (ease((transition_delta - 150.0) / 1500.0) * (hw + 8.0) - hw) as _;
-			let start_button_y = ty - 7 - mode.start_button.width();
+			let start_button_x = (ease((transition_delta - 150.0) / 1200.0) * (hw + 8.0) - hw) as _;
+			let start_button_y = underline_y - 2 - mode.start_button.height();
 			mode.start_button
 				.update_draw(engine, bg, fg, start_button_x, start_button_y);
 
-			let b2 = "credits";
-			let tx = (ease((transition_delta - 300.0) / 1500.0) * (hw + 8.0) - hw) as _;
-			let ty = start_button_y - 3 - mode.credits_button.height();
+			let tx = (ease((transition_delta - 300.0) / 1200.0) * (hw + 8.0) - hw) as _;
+			let ty = start_button_y - 2 - mode.credits_button.height();
 			mode.credits_button.update_draw(engine, bg, fg, tx, ty);
+
+			let cred = "made by addie.sh";
+			let (w, h) = measure_string(Font::Tiny, cred);
+			let ty = ty - h as i32 - 2;
+			let tx = (ease((transition_delta - 450.0) / 1200.0) * (hw + 8.0) - hw) as _;
+			draw_string(engine, Font::Tiny, cred, tx, ty, (color & 0xFFFFFF00) | 0x60);
 
 			if mode.mode == MainMenuMode::Title {
 				// click event
-				if state.last_mouse.status == false && mouse.status == true {
+				if engine.mouse_just_pressed() {
+					//
 					if mouse.x > start_button_x
 						&& mouse.x < start_button_x + mode.start_button.width()
 						&& mouse.y > start_button_y
@@ -150,6 +138,8 @@ fn update(state: &mut GameState, engine: &mut Metra) -> MetraStatus {
 						mode.transition_start = time;
 						mode.last_mode = mode.mode;
 						mode.mode = MainMenuMode::Start;
+						mode.start_button.enabled = false;
+						mode.credits_button.enabled = false;
 					}
 				}
 			} else if mode.mode == MainMenuMode::Start {
@@ -169,7 +159,6 @@ fn update(state: &mut GameState, engine: &mut Metra) -> MetraStatus {
 
 			draw_cursor(engine);
 
-			state.last_mouse = mouse;
 			MetraStatus::Continue
 		}
 	}

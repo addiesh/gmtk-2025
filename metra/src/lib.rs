@@ -30,7 +30,10 @@ mod sys;
 pub const VIEWPORT_WIDTH: u32 = 240;
 pub const VIEWPORT_HEIGHT: u32 = 180;
 
-pub struct Metra {}
+pub struct Metra {
+	last_mouse_status: MouseStatus,
+	current_mouse_status: MouseStatus,
+}
 
 #[derive(Copy, Clone)]
 pub enum Sprite {
@@ -73,7 +76,7 @@ impl Sound {
 }
 
 
-#[derive(Copy, Clone, Eq, PartialEq)]
+#[derive(Copy, Clone, Eq, PartialEq, Default)]
 pub struct MouseStatus {
 	pub x: i32,
 	pub y: i32,
@@ -82,11 +85,14 @@ pub struct MouseStatus {
 
 impl Metra {
 	pub(crate) fn new() -> Self {
-		Self {}
+		Self {
+			last_mouse_status: MouseStatus::default(),
+			current_mouse_status: MouseStatus::default()
+		}
 	}
 
 	#[inline]
-	pub(crate) fn update_internal(&mut self, status: MetraStatus) {
+	pub(crate) fn update_internal(&mut self, _status: MetraStatus) {
 		fn iterate_targets<T>(
 			targets: &mut Vec<NonNull<ResourceTarget<T>>>,
 			func: fn(target: &mut T),
@@ -170,14 +176,14 @@ impl Metra {
 
 	#[must_use]
 	#[inline]
-	pub fn mouse_status(&self) -> MouseStatus{
-		unsafe {
-			MouseStatus {
-				x: sys::EXPOSED_MOUSE_POS_X,
-				y: sys::EXPOSED_MOUSE_POS_Y,
-				status: sys::EXPOSED_MOUSE_STATUS == 1
-			}
-		}
+	pub fn mouse_status(&self) -> MouseStatus {
+		self.current_mouse_status
+	}
+
+	#[must_use]
+	#[inline]
+	pub fn mouse_just_pressed(&self) -> bool {
+		self.mouse_status().status && self.mouse_status().status != self.last_mouse_status.status
 	}
 
 	/// Returns a pseudo-random number from 0 to 1.
@@ -304,6 +310,17 @@ pub fn run<T: 'static>(
 	let mut game_state = Some(init_callback(&mut engine));
 	unsafe {
 		UPDATE_FN = Some(Box::new(move || {
+
+			let new_mouse_status = unsafe {
+				MouseStatus {
+					x: sys::EXPOSED_MOUSE_POS_X,
+					y: sys::EXPOSED_MOUSE_POS_Y,
+					status: sys::EXPOSED_MOUSE_STATUS == 1
+				}
+			};
+			engine.last_mouse_status = engine.current_mouse_status;
+			engine.current_mouse_status = new_mouse_status;
+
 			// This closure captures the engine and the game state,
 			// which at this point have known sizes.
 			match &mut game_state {

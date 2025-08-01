@@ -56,19 +56,10 @@ pub struct FamousPerson {
 }
 
 impl FamousPerson {
-	pub const fn new(
-		first_name: &'static str,
-		last_name: &'static str,
-		origin: City,
-		role: FamousRole,
-	) -> Self {
+	pub const fn new(first_name: &'static str, last_name: &'static str, origin: City, role: FamousRole) -> Self {
 		Self {
 			first_name,
-			last_name: if last_name.is_empty() {
-				None
-			} else {
-				Some(last_name)
-			},
+			last_name: if last_name.is_empty() { None } else { Some(last_name) },
 			origin,
 			role,
 		}
@@ -84,12 +75,7 @@ pub const FAMOUS_PEOPLE: &[FamousPerson] = &[
 	FamousPerson::new("Rachel", "", City::MonteBeer, FamousRole::Influencer),
 	FamousPerson::new("Les", "Morester", City::Burgin, FamousRole::Politician),
 	FamousPerson::new("George", "King", City::Diego, FamousRole::Politician),
-	FamousPerson::new(
-		"Doug",
-		"Moffster",
-		City::OlderForkevill,
-		FamousRole::Politician,
-	),
+	FamousPerson::new("Doug", "Moffster", City::OlderForkevill, FamousRole::Politician),
 	FamousPerson::new("Amy", "Nero", City::OlderForkevill, FamousRole::Actor),
 	FamousPerson::new("Logan", "Dreamer", City::OlderForkevill, FamousRole::Actor),
 	FamousPerson::new("Toy", "L'Beaubuo", City::OlderForkevill, FamousRole::Actor),

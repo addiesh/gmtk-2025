@@ -43,17 +43,10 @@ impl Button {
 			Font::Medium => 2,
 			Font::Big => 2,
 		};
-		(w + pd * 2 + 1, h + pd * 2 + 1)
+		(w + pd * 2 + 2, h + pd * 2 + 2)
 	}
 
-	pub fn update_draw(
-		&mut self,
-		engine: &mut Metra,
-		bg_color: u32,
-		fg_color: u32,
-		x: i32,
-		y: i32,
-	) {
+	pub fn update_draw(&mut self, engine: &mut Metra, bg_color: u32, fg_color: u32, x: i32, y: i32) {
 		let border_color = shade(bg_color, 1, 2);
 
 		let mouse = engine.mouse_status();
@@ -77,69 +70,20 @@ impl Button {
 		}
 		self.is_hovering = hovered;
 
-		let bg_color = if hovered {
-			shade(bg_color, 4, 5)
-		} else {
-			bg_color
-		};
+		let bg_color = if hovered { shade(bg_color, 4, 5) } else { bg_color };
 
 		let x = x + pd + 1;
 		let y = y + pd + 1;
 		// bg
-		engine.draw(
-			Sprite::Square,
-			x - pd,
-			y - pd,
-			w + pd * 2,
-			h + pd * 2,
-			0,
-			0,
-			bg_color,
-		);
+		engine.draw(Sprite::Square, x - pd, y - pd, w + pd * 2, h + pd * 2, 0, 0, bg_color);
 		// top
-		engine.draw(
-			Sprite::Square,
-			x - pd,
-			y + h + pd,
-			w + pd * 2,
-			1,
-			0,
-			0,
-			border_color,
-		);
+		engine.draw(Sprite::Square, x - pd, y + h + pd, w + pd * 2, 1, 0, 0, border_color);
 		// bottom
-		engine.draw(
-			Sprite::Square,
-			x - pd,
-			y - pd - 1,
-			w + pd * 2,
-			1,
-			0,
-			0,
-			border_color,
-		);
+		engine.draw(Sprite::Square, x - pd, y - pd - 1, w + pd * 2, 1, 0, 0, border_color);
 		// left
-		engine.draw(
-			Sprite::Square,
-			x - pd - 1,
-			y - pd,
-			1,
-			h + pd * 2,
-			0,
-			0,
-			border_color,
-		);
+		engine.draw(Sprite::Square, x - pd - 1, y - pd, 1, h + pd * 2, 0, 0, border_color);
 		// right
-		engine.draw(
-			Sprite::Square,
-			x + w + pd,
-			y - pd,
-			1,
-			h + pd * 2,
-			0,
-			0,
-			border_color,
-		);
+		engine.draw(Sprite::Square, x + w + pd, y - pd, 1, h + pd * 2, 0, 0, border_color);
 		draw_string(engine, self.font, self.label, x, y, fg_color);
 	}
 }
