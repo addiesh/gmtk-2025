@@ -3,6 +3,7 @@
 This is forked from my hobby project, [Metra](https://github.com/addiesh/metra), which was created for this jam,
 but wasn't finished in time.
 
-- [ ] Texture atlas quads
-- [ ] "Font rendering"
-- [ ]
+- [x] Texture atlas quads
+- [x] "Font rendering"
+- [ ] SFX
+- [ ] A game

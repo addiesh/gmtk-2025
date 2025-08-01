@@ -55,7 +55,7 @@ impl Sprite {
 	}
 }
 
-#[derive(Copy, Clone)]
+#[derive(Copy, Clone, Eq, PartialEq)]
 pub struct MouseStatus {
 	pub x: i32,
 	pub y: i32,
