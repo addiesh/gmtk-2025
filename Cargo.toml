@@ -8,6 +8,8 @@ readme = "README.md"
 log = "0.4.27"
 libm = "0.2.15"
 metra = { path = "metra" }
+#serde = { version = "1.0.219", features = ["derive"] }
+#serde_json = "1.0"
 
 [profile.dev]
 panic = "abort"

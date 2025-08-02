@@ -1,5 +1,4 @@
 use crate::data::{City, FamousPerson};
-use core::convert::Into;
 
 pub type PlaceholderType = ();
 
@@ -32,6 +31,7 @@ pub enum ArticleWordType {
 	Person,
 	City,
 	Event,
+	Any,
 }
 
 pub enum ArticleWord {
@@ -46,11 +46,30 @@ pub enum ArticlePart {
 
 pub struct ArticleTemplate(pub &'static [ArticlePart]);
 
-// const ARTICLE_TEMPLATES: &[ArticleTemplate] = &[ArticleTemplate(&[ArticleWordType::Noun.into()])];
+const ARTICLE_TEMPLATES: &[ArticleTemplate] = &[
+	ArticleTemplate(&[
+		ArticlePart::Word(ArticleWordType::Person),
+		ArticlePart::Literal("'s Response To The "),
+		ArticlePart::Word(ArticleWordType::Any),
+		ArticlePart::Literal("Allegations"),
+	]),
+	ArticleTemplate(&[
+		ArticlePart::Literal("You Will Not Believe "),
+		ArticlePart::Word(ArticleWordType::Person),
+		ArticlePart::Literal("'s Take On"),
+		ArticlePart::Word(ArticleWordType::Any),
+	]),
+	ArticleTemplate(&[
+		ArticlePart::Word(ArticleWordType::Person),
+		ArticlePart::Literal("DIES At Age 58 (Are You Next? Click Here To Find Out)"),
+	]),
+];
 
-// - Trying to lose [word:any]? Try [word:any] NOW!
-// - Local [word:place] [word:any] day celebration gone WRONG (gone [word:any]?!)
-// - You will not believe [word:people]'s take on [word:any]
-// - [word:people]'s Response to the [word:any] Allegations
-// - [word:people] DIES at age 58 (are you next?)
-// - Top 10 [word:actions]
+// - Trying to lose [any]? Try [any] NOW!
+// - Local [location] [any] day celebration gone WRONG (gone [word:any]?!)
+// - You will not believe [person]'s take on [word:any]
+// - [person]'s Response to the [word:any] Allegations
+// - [person] DIES at age 58 (are you next?)
+// - Top 10 [actions]
+// - Top 10 [events] [person] was afraid to diss
+// - 5 ways to get rid of [word:actions]

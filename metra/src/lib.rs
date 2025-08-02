@@ -11,15 +11,12 @@ compile_error!("Metra must target WASM32");
 #[global_allocator]
 static DLMALLOC: dlmalloc::GlobalDlmalloc = dlmalloc::GlobalDlmalloc;
 
-use core::ops::Deref;
-
-use alloc::string::String;
 use alloc::vec::Vec;
-use alloc::{borrow::ToOwned, boxed::Box};
+use alloc::{boxed::Box};
 use base64::Engine;
 use core::num::NonZeroU32;
 use core::ptr::NonNull;
-use log::{debug, error, warn};
+use log::{debug, error, info, warn};
 use crate::resource::ResourceTarget;
 
 mod logger;
@@ -33,6 +30,7 @@ pub const VIEWPORT_HEIGHT: u32 = 180;
 pub struct Metra {
 	last_mouse_status: MouseStatus,
 	current_mouse_status: MouseStatus,
+	last_time: f64,
 }
 
 #[derive(Copy, Clone)]
@@ -87,7 +85,8 @@ impl Metra {
 	pub(crate) fn new() -> Self {
 		Self {
 			last_mouse_status: MouseStatus::default(),
-			current_mouse_status: MouseStatus::default()
+			current_mouse_status: MouseStatus::default(),
+			last_time: 0.0,
 		}
 	}
 
@@ -149,6 +148,14 @@ impl Metra {
 	#[inline]
 	pub fn time(&self) -> f64 {
 		unsafe { sys::get_time() }
+	}
+
+	#[must_use]
+	#[inline]
+	pub fn delta(&self) -> f64 {
+		let delta = (self.time() - self.last_time) / 1000.0;
+		info!("delta = {delta}");
+		delta.clamp(0.0000001, 1.0 / 15.0)
 	}
 
 	#[inline]
@@ -340,6 +347,8 @@ pub fn run<T: 'static>(
 					} else {
 						engine.update_internal(status);
 					}
+
+					engine.last_time = engine.time();
 
 					status
 				}

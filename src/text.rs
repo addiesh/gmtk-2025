@@ -138,7 +138,7 @@ impl Font {
 		])
 	};
 
-	const BIG_METRICS: [FontMetric; 42] = {
+	const BIG_METRICS: [FontMetric; 70] = {
 		const fn new_bulk<const N: usize>(data: [(u8, char); N]) -> [FontMetric; N] {
 			let mut pos = 0;
 			let mut i = 0;
@@ -204,6 +204,34 @@ impl Font {
 			(4, '.'),
 			(5, ','),
 			(21, '\0'),
+			(8, '('),
+			(8, ')'),
+			(18, 'A'),
+			(14, 'B'),
+			(17, 'C'),
+			(16, 'D'),
+			(13, 'E'),
+			(13, 'F'),
+			(17, 'G'),
+			(16, 'H'),
+			(5, 'I'),
+			(13, 'J'),
+			(16, 'K'),
+			(12, 'L'),
+			(19, 'M'),
+			(16, 'N'),
+			(18, 'O'),
+			(15, 'P'),
+			(18, 'Q'),
+			(15, 'R'),
+			(15, 'S'),
+			(15, 'T'),
+			(15, 'U'),
+			(18, 'V'),
+			(25, 'W'),
+			(17, 'X'),
+			(15, 'Y'),
+			(16, 'Z'),
 		])
 	};
 
@@ -241,15 +269,20 @@ impl Font {
 		match ch {
 			'-' => FontMetric {
 				width,
-				pos: 4 * 37,
+				pos: 4 * 36,
 				glyph: ch8,
 			},
 			'+' => FontMetric {
 				width,
-				pos: 4 * 38,
+				pos: 4 * 37,
 				glyph: ch8,
 			},
 			'!' => FontMetric {
+				width,
+				pos: 4 * 38,
+				glyph: ch8,
+			},
+			'.' => FontMetric {
 				width,
 				pos: 4 * 39,
 				glyph: ch8,
@@ -280,6 +313,9 @@ impl Font {
 		if ch8 >= 'a' as u8 && ch8 <= 'z' as u8 {
 			return Self::BIG_METRICS[(ch8 - 'a' as u8) as usize];
 		}
+		if ch8 >= 'A' as u8 && ch8 <= 'Z' as u8 {
+			return Self::BIG_METRICS[(ch8 - 'A' as u8) as usize + 44];
+		}
 		if ch8 >= '0' as u8 && ch8 <= '9' as u8 {
 			return Self::BIG_METRICS[(ch8 - '0' as u8) as usize + 27];
 		}
@@ -289,6 +325,8 @@ impl Font {
 			'*' => Self::BIG_METRICS[38],
 			'.' => Self::BIG_METRICS[39],
 			',' => Self::BIG_METRICS[40],
+			'(' => Self::BIG_METRICS[42],
+			')' => Self::BIG_METRICS[43],
 			_ => Self::BIG_METRICS[41],
 		}
 	}
@@ -305,7 +343,7 @@ impl Font {
 		match self {
 			Font::Tiny => 5,
 			Font::Medium => 9,
-			Font::Big => 19,
+			Font::Big => 21,
 		}
 	}
 
