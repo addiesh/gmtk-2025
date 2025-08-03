@@ -83,6 +83,26 @@ impl Font {
 				pos: 4 * 40,
 				glyph: ch8,
 			},
+			'(' => FontMetric {
+				width,
+				pos: 4 * 41,
+				glyph: ch8,
+			},
+			')' => FontMetric {
+				width,
+				pos: 4 * 42,
+				glyph: ch8,
+			},
+			'?' => FontMetric {
+				width,
+				pos: 4 * 43,
+				glyph: ch8,
+			},
+			'\'' => FontMetric {
+				width,
+				pos: 4 * 44,
+				glyph: ch8,
+			},
 			_ => FontMetric {
 				glyph: 0,
 				pos: 0,
@@ -295,7 +315,7 @@ impl Font {
 			(5, 'I'),
 			(13, 'J'),
 			(16, 'K'),
-			(12, 'L'),
+			(13, 'L'),
 			(19, 'M'),
 			(16, 'N'),
 			(18, 'O'),

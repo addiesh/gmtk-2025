@@ -141,6 +141,12 @@ impl Metra {
 		self.mouse_status().status && self.mouse_status().status != self.last_mouse_status.status
 	}
 
+	#[must_use]
+	#[inline]
+	pub fn mouse_just_released(&self) -> bool {
+		!self.mouse_status().status && self.mouse_status().status != self.last_mouse_status.status
+	}
+
 	/// Returns a pseudo-random number from 0 to 1.
 	#[must_use]
 	#[inline]

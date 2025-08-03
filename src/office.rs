@@ -1,17 +1,23 @@
-use crate::articles::ARTICLE_TEMPLATES;
+use crate::articles::{ARTICLE_TEMPLATES, TemplateBlank};
+use crate::button::Button;
+use crate::main_menu::MainMenuMode;
 use crate::text::{Font, StringDraw, draw_string, measure_string};
 use crate::trending::TrendingData;
-use crate::{GameMode, GameState, PALETTE_FG, PALETTE_PINK, draw_cursor, ease};
+use crate::trending_widget::TrendingWidget;
+use crate::{GameMode, GameState, PALETTE_BG, PALETTE_FG, PALETTE_PINK, draw_cursor, ease};
 use alloc::format;
 use alloc::string::ToString;
 use core::f32::consts::TAU;
 use libm::{cosf, sinf};
+use log::info;
 use metra::{Metra, Sound, Sprite, VIEWPORT_HEIGHT, VIEWPORT_WIDTH};
 
-#[derive(Copy, Clone, Eq, PartialEq)]
+#[derive(Copy, Clone, PartialEq)]
 pub enum OfficeMode {
 	Init,
-	Main,
+	Dealing,
+	Assembling,
+	Scoring,
 }
 
 #[derive(Copy, Clone, PartialEq, Default)]
@@ -69,119 +75,13 @@ impl ScoreCounter {
 	}
 }
 
-#[derive(Copy, Clone, PartialEq)]
-pub struct TrendingWidget {
-	pos: f32,
-	is_open: bool,
-}
-
-impl TrendingWidget {
-	const WIDTH: i32 = 73;
-	const CEILING_DROP: i32 = 16;
-
-	fn update_draw(&mut self, engine: &mut Metra, trending: &mut TrendingData) {
-		let mouse = engine.mouse_status();
-
-		let h = 110;
-		let tab_h = 48;
-		let w = 88;
-
-		let is_hovering_tab = mouse.x >= 0
-			// the additional is just to make it smoother to use
-			&& mouse.x <= w - Self::WIDTH + 16
-			&& mouse.y >= VIEWPORT_HEIGHT - Self::CEILING_DROP - tab_h
-			&& mouse.y <= VIEWPORT_HEIGHT - Self::CEILING_DROP;
-
-		if is_hovering_tab {
-			if !self.is_open {
-				engine.play_sound(Sound::ClickUp);
-				self.is_open = true;
-			}
-		}
-
-		let is_hovering_whole = mouse.x >= 0
-			&& mouse.x <= w
-			&& mouse.y >= VIEWPORT_HEIGHT - Self::CEILING_DROP - h
-			&& mouse.y <= VIEWPORT_HEIGHT - Self::CEILING_DROP;
-
-		if self.is_open && !is_hovering_whole {
-			engine.play_sound(Sound::Vcr);
-			self.is_open = false;
-		}
-
-		if self.is_open {
-			self.pos = (self.pos + (1800.0 * engine.delta() as f32)).clamp(0.0, Self::WIDTH as f32);
-		} else {
-			self.pos = (self.pos * (1.0 - 16.0 * engine.delta() as f32)).clamp(0.0, Self::WIDTH as f32);
-		}
-
-		engine.draw(
-			Sprite::Atlas,
-			self.pos as i32 - Self::WIDTH,
-			VIEWPORT_HEIGHT - Self::CEILING_DROP - h,
-			w,
-			h,
-			0,
-			-16,
-			u32::MAX,
-		);
-		{
-			let header = "trends";
-			measure_string(Font::Big, header);
-			draw_string(
-				engine,
-				StringDraw::wavy(
-					Font::Big,
-					header,
-					7 + self.pos as i32 - Self::WIDTH,
-					VIEWPORT_HEIGHT - Self::CEILING_DROP - 25,
-					PALETTE_PINK,
-					5.0,
-				),
-			);
-		}
-		let trending_strings = [
-			Some(trending.people()[0].0.as_str()),
-			Some(trending.people()[1].0.as_str()),
-			None,
-			Some(trending.cities()[0].0.as_str()),
-			Some(trending.cities()[1].0.as_str()),
-			None,
-			Some(trending.things()[0].0.as_str()),
-			Some(trending.things()[1].0.as_str()),
-		];
-
-		// let mut total_width = 0;
-		let mut y_offset = 0;
-		for t_str in trending_strings {
-			if let Some(t_str) = t_str {
-				let s = format!("- {t_str}");
-				let (w, h) = measure_string(Font::Tiny, &s);
-				draw_string(
-					engine,
-					StringDraw::basic(
-						Font::Tiny,
-						&s,
-						5 + self.pos as i32 - Self::WIDTH, // + total_width,
-						VIEWPORT_HEIGHT - Self::CEILING_DROP - 31 - h - y_offset,
-						PALETTE_PINK,
-					),
-				);
-				// total_width += w as i32 + 4;
-				y_offset += 8;
-			} else {
-				y_offset += 3;
-			}
-		}
-	}
-}
-
 #[derive(Clone, PartialEq)]
 pub struct Office {
 	last_mode: OfficeMode,
 	mode: OfficeMode,
 	last_transition_start: f64,
 	transition_start: f64,
+	submit_assembled_button: Button,
 	score_counter: ScoreCounter,
 	trending_widget: TrendingWidget,
 	trending_data: TrendingData,
@@ -194,11 +94,9 @@ impl Office {
 			mode: OfficeMode::Init,
 			last_transition_start: time,
 			transition_start: time,
+			submit_assembled_button: Button::new(Font::Medium, "Submit", false),
 			score_counter: ScoreCounter::default(),
-			trending_widget: TrendingWidget {
-				pos: 0.0,
-				is_open: false,
-			},
+			trending_widget: TrendingWidget::new(),
 			trending_data: TrendingData::new(engine),
 		}
 	}
@@ -211,13 +109,29 @@ pub fn go(state: &mut GameState, engine: &mut Metra) {
 		unreachable!()
 	};
 
-	ARTICLE_TEMPLATES[0].draw(engine, 0, 64);
+	let (w, h) = ARTICLE_TEMPLATES[0].draw(engine, 0, 64, &[TemplateBlank::Blank, TemplateBlank::Blank]);
+	let (w, h2) = ARTICLE_TEMPLATES[1].draw(engine, 0, 64 - h, &[TemplateBlank::Blank, TemplateBlank::Blank]);
+	ARTICLE_TEMPLATES[2].draw(engine, 0, 64 - h - h2, &[TemplateBlank::Blank]);
 
-	mode.trending_widget.update_draw(engine, &mut mode.trending_data);
-	if engine.mouse_just_pressed() {
-		mode.score_counter.bounce(engine);
+	// hide the widget before it comes onscreen
+	if mode.mode != OfficeMode::Assembling {
+		mode.trending_widget.pos = (-TrendingWidget::WIDTH - 16) as f32;
 	}
-	mode.score_counter.update_draw(engine, 0);
+
+	if mode.mode == OfficeMode::Assembling {
+		mode.trending_widget.update_draw(engine, &mut mode.trending_data);
+
+		mode.submit_assembled_button.enabled = true;
+		let transition_delta = time - mode.transition_start;
+		let (w, h) = mode.submit_assembled_button.measure();
+		let tx = ((ease(transition_delta / 600.0)) * (8.0 + w as f64)) as i32;
+		mode.submit_assembled_button
+			.update_draw(engine, PALETTE_PINK, PALETTE_BG, VIEWPORT_WIDTH - tx, 4);
+	}
+
+	if mode.mode == OfficeMode::Scoring {
+		mode.score_counter.update_draw(engine, 0);
+	}
 
 	match mode.mode {
 		OfficeMode::Init => {
@@ -233,12 +147,28 @@ pub fn go(state: &mut GameState, engine: &mut Metra) {
 				0,
 				0x20242800 | ((a * 255.0) as u32 & 0xFF),
 			);
-			// mode.last_transition_start = mode.transition_start;
-			// mode.transition_start = time;
-			// mode.last_mode = mode.mode;
-			// mode.mode = OfficeMode::Main;
+			if time - mode.transition_start >= 1000.0 {
+				mode.last_transition_start = mode.transition_start;
+				mode.transition_start = time;
+				mode.last_mode = mode.mode;
+				mode.mode = OfficeMode::Assembling;
+				info!("changing office mode to dealing");
+			}
 		}
-		OfficeMode::Main => {}
+		OfficeMode::Dealing => {}
+		OfficeMode::Assembling => {
+			mode.score_counter.current_offset_y = -16.0;
+		}
+		OfficeMode::Scoring => {}
+	}
+
+	if engine.mouse_just_pressed() {
+		match mode.mode {
+			OfficeMode::Init => {}
+			OfficeMode::Dealing => {}
+			OfficeMode::Assembling => {}
+			OfficeMode::Scoring => {}
+		}
 	}
 
 	draw_cursor(engine);

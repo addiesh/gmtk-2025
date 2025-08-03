@@ -155,6 +155,12 @@ pub struct ArticleTemplate {
 	pub parts: &'static [ArticlePart],
 }
 
+#[derive(Copy, Clone)]
+pub enum TemplateBlank {
+	Blank,
+	Filled(&'static str),
+}
+
 impl ArticleTemplate {
 	#[inline]
 	const fn new(parts: &'static [ArticlePart]) -> Self {
@@ -163,24 +169,48 @@ impl ArticleTemplate {
 
 	const FONT: Font = Font::Tiny;
 
-	pub fn measure(&self) -> (i32, i32) {
+	pub fn measure(&self, fills: &[TemplateBlank]) -> (i32, i32) {
 		let mut total_width = 0;
-		let blank = measure_string(Self::FONT, "____").0 + 2;
+		let mut word_index = 0;
 		for part in self.parts {
 			total_width += match part {
-				ArticlePart::Word(w) => blank,
+				ArticlePart::Word(w) => {
+					let blank = fills[word_index];
+					word_index += 1;
+					match blank {
+						TemplateBlank::Blank => measure_string(Self::FONT, "____").0 + 2,
+						TemplateBlank::Filled(s) => {
+							let blank_width = s.len();
+							let blank_str = (0..blank_width).map(|_| "_").collect::<String>();
+							measure_string(Self::FONT, &blank_str).0 + 2
+						}
+					}
+				}
 				ArticlePart::Literal(s) => measure_string(Self::FONT, s).0,
 			}
 		}
 		(total_width, Self::FONT.height() + 2)
 	}
 
-	pub fn draw(&self, engine: &mut Metra, x: i32, y: i32) -> (i32, i32) {
+	pub fn draw(&self, engine: &mut Metra, x: i32, y: i32, lengths: &[TemplateBlank]) -> (i32, i32) {
 		let mut pos = 0;
-		let blank = measure_string(Self::FONT, "____").0 + 2;
+		let mut word_index = 0;
 		for part in self.parts {
 			pos += match part {
-				ArticlePart::Word(w) => {
+				ArticlePart::Word(_) => {
+					let blank = lengths[word_index];
+					word_index += 1;
+					let aster = match blank {
+						TemplateBlank::Blank => None,
+						TemplateBlank::Filled(s) => {
+							let blank_width = s.len();
+							Some((0..blank_width).map(|_| "_").collect::<String>())
+						}
+					};
+
+					let blank_str = aster.as_ref().map(|s| s.as_str()).unwrap_or("____");
+
+					let blank = measure_string(Self::FONT, &blank_str).0 + 2;
 					engine.draw(
 						Sprite::Square,
 						x + pos,
@@ -193,7 +223,7 @@ impl ArticleTemplate {
 					);
 					draw_string(
 						engine,
-						StringDraw::wavy(Self::FONT, "____", x + pos + 1, y + 1, PALETTE_BG, 12.0),
+						StringDraw::wavy(Self::FONT, &blank_str, x + pos + 1, y + 1, PALETTE_BG, 12.0),
 					)
 					.0;
 					blank
@@ -204,7 +234,7 @@ impl ArticleTemplate {
 			};
 		}
 		pos += (self.parts.len() as i32).saturating_sub(1) * 4;
-		(pos, Self::FONT.height())
+		(pos, Self::FONT.height() + 2)
 	}
 }
 
@@ -343,7 +373,7 @@ pub fn score_article(template: &ArticleTemplate, words: &[ArticleWord], trending
 
 		if trending_index < 5 {
 			score.push(ScoreInfo::new(
-				String::from("Trending Person!"),
+				String::from("Trending Subject"),
 				ScoreType::Addition(trending_score * 40),
 			));
 		}

@@ -7,6 +7,7 @@ mod main_menu;
 mod office;
 mod text;
 mod trending;
+mod trending_widget;
 
 extern crate alloc;
 

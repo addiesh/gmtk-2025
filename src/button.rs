@@ -8,36 +8,21 @@ pub struct Button {
 	pub enabled: bool,
 	font: Font,
 	is_hovering: bool,
-	width: i32,
-	height: i32,
 }
 
 impl Button {
 	pub fn new(font: Font, label: &'static str, enabled: bool) -> Self {
-		let (width, height) = Self::measure_button(font, label);
 		Self {
 			font,
 			label,
-			width,
-			height,
 			is_hovering: false,
 			enabled,
 		}
 	}
 
-	#[inline]
-	pub fn width(&self) -> i32 {
-		self.width
-	}
-
-	#[inline]
-	pub fn height(&self) -> i32 {
-		self.height
-	}
-
-	fn measure_button(font: Font, label: &str) -> (i32, i32) {
-		let (w, h) = measure_string(font, label);
-		let pd = match font {
+	pub fn measure(&self) -> (i32, i32) {
+		let (w, h) = measure_string(self.font, self.label);
+		let pd = match self.font {
 			Font::Tiny => 2,
 			Font::Medium => 2,
 			Font::Big => 2,

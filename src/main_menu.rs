@@ -43,7 +43,7 @@ pub fn go(state: &mut GameState, engine: &mut Metra) {
 	let time = engine.time();
 	let mouse = engine.mouse_status();
 
-	let t1 = "BREAKING!\nout of the loop";
+	let t1 = "BREAKING!\nOut Of The Loop";
 	let font = Font::Big;
 	let (w, h) = measure_string(font, t1);
 	let ty = VIEWPORT_HEIGHT - h - 8;
@@ -69,8 +69,10 @@ pub fn go(state: &mut GameState, engine: &mut Metra) {
 		PALETTE_FG,
 	);
 
+	let (start_button_w, start_button_h) = mode.start_button.measure();
+
 	let start_button_x = (ease((transition_delta - 150.0) / 1200.0) * (hw + 8.0) - hw) as _;
-	let start_button_y = underline_y - 2 - mode.start_button.height();
+	let start_button_y = underline_y - 2 - start_button_h;
 	mode.start_button
 		.update_draw(engine, PALETTE_PINK, PALETTE_BG, start_button_x, start_button_y);
 
@@ -91,11 +93,10 @@ pub fn go(state: &mut GameState, engine: &mut Metra) {
 	if mode.mode == MainMenuMode::Title {
 		// click event
 		if engine.mouse_just_pressed() {
-			//
 			if mouse.x > start_button_x
-				&& mouse.x < start_button_x + mode.start_button.width()
+				&& mouse.x < start_button_x + start_button_w
 				&& mouse.y > start_button_y
-				&& mouse.y < start_button_y + mode.start_button.height()
+				&& mouse.y < start_button_y + start_button_h
 			{
 				engine.play_sound(Sound::ClickDown);
 				mode.last_transition_start = mode.transition_start;
