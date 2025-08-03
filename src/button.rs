@@ -1,5 +1,5 @@
 use crate::shade;
-use crate::text::{Font, draw_string, measure_string};
+use crate::text::{Font, StringDraw, draw_string, measure_string};
 use metra::{Metra, Sound, Sprite};
 
 #[derive(Copy, Clone, PartialEq)]
@@ -37,7 +37,6 @@ impl Button {
 
 	fn measure_button(font: Font, label: &str) -> (i32, i32) {
 		let (w, h) = measure_string(font, label);
-		let (w, h) = (w as i32, h as i32);
 		let pd = match font {
 			Font::Tiny => 2,
 			Font::Medium => 2,
@@ -52,7 +51,6 @@ impl Button {
 		let mouse = engine.mouse_status();
 
 		let (w, h) = measure_string(self.font, self.label);
-		let (w, h) = (w as i32, h as i32);
 
 		let pd = match self.font {
 			Font::Tiny => 2,
@@ -66,7 +64,7 @@ impl Button {
 			&& self.enabled;
 
 		if hovered && !self.is_hovering {
-			engine.play_sound(Sound::ClickDown);
+			engine.play_sound(Sound::ClickUp);
 		}
 		self.is_hovering = hovered;
 
@@ -84,6 +82,6 @@ impl Button {
 		engine.draw(Sprite::Square, x - pd - 1, y - pd, 1, h + pd * 2, 0, 0, border_color);
 		// right
 		engine.draw(Sprite::Square, x + w + pd, y - pd, 1, h + pd * 2, 0, 0, border_color);
-		draw_string(engine, self.font, self.label, x, y, fg_color);
+		draw_string(engine, StringDraw::basic(self.font, self.label, x, y, fg_color));
 	}
 }

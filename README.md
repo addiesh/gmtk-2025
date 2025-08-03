@@ -5,5 +5,5 @@ but wasn't finished in time.
 
 - [x] Texture atlas quads
 - [x] "Font rendering"
-- [ ] SFX
+- [x] SFX
 - [ ] A game

@@ -1,3 +1,4 @@
+use libm::{cosf, powf};
 use metra::{Metra, Sprite};
 
 #[derive(Copy, Clone, Default)]
@@ -25,9 +26,74 @@ pub enum Font {
 }
 
 impl Font {
-	const MEDIUM_METRICS: [FontMetric; 89] = {
+	const fn tiny_metric(ch: char) -> FontMetric {
+		let width = 3;
+		if !ch.is_ascii() {
+			return FontMetric {
+				glyph: 0,
+				pos: 0,
+				width: 0,
+			};
+		}
+		let ch8 = ch as u8;
+		if ch8 >= 'a' as u8 && ch8 <= 'z' as u8 {
+			return FontMetric {
+				width,
+				pos: 4 * ((ch8 - 'a' as u8) as u16),
+				glyph: ch8,
+			};
+		}
+		if ch8 >= 'A' as u8 && ch8 <= 'Z' as u8 {
+			return FontMetric {
+				width,
+				pos: 4 * ((ch8 - 'A' as u8) as u16),
+				glyph: ch8 + 32,
+			};
+		}
+		if ch8 >= '0' as u8 && ch8 <= '9' as u8 {
+			return FontMetric {
+				width,
+				pos: 4 * (26 + (ch8 - '0' as u8) as u16),
+				glyph: ch8,
+			};
+		}
+		match ch {
+			'-' => FontMetric {
+				width,
+				pos: 4 * 36,
+				glyph: ch8,
+			},
+			'+' => FontMetric {
+				width,
+				pos: 4 * 37,
+				glyph: ch8,
+			},
+			'!' => FontMetric {
+				width,
+				pos: 4 * 38,
+				glyph: ch8,
+			},
+			'.' => FontMetric {
+				width,
+				pos: 4 * 39,
+				glyph: ch8,
+			},
+			'_' => FontMetric {
+				width,
+				pos: 4 * 40,
+				glyph: ch8,
+			},
+			_ => FontMetric {
+				glyph: 0,
+				pos: 0,
+				width: 0,
+			},
+		}
+	}
+
+	const MEDIUM_METRICS: [FontMetric; 90] = {
 		const fn new_bulk<const N: usize>(data: [(u8, char); N]) -> [FontMetric; N] {
-			let mut pos = 0;
+			let mut pos = 1;
 			let mut i = 0;
 			let mut out = [FontMetric {
 				pos: 0,
@@ -38,14 +104,14 @@ impl Font {
 				let width = data[i].0;
 				let glyph = data[i].1 as u8;
 				out[i] = FontMetric { pos, width, glyph };
-				pos += width as u16;
+				pos += width as u16 + 1;
 				i += 1;
 			}
 			out
 		}
 
 		new_bulk([
-			// the +1 is padding.
+			(8, '\0'),
 			(2, '!'),
 			(3, '"'),
 			(5, '#'),
@@ -138,7 +204,19 @@ impl Font {
 		])
 	};
 
-	const BIG_METRICS: [FontMetric; 70] = {
+	const fn medium_metric(ch: char) -> FontMetric {
+		if !ch.is_ascii() || ch == '\0' {
+			return Self::MEDIUM_METRICS[0];
+		}
+		let ch8 = ch as u8;
+		if ch8 >= '!' as u8 && ch8 <= 'z' as u8 {
+			Self::MEDIUM_METRICS[(ch8 - '!' as u8) as usize + 1]
+		} else {
+			Self::MEDIUM_METRICS[0]
+		}
+	}
+
+	const BIG_METRICS: [FontMetric; 71] = {
 		const fn new_bulk<const N: usize>(data: [(u8, char); N]) -> [FontMetric; N] {
 			let mut pos = 0;
 			let mut i = 0;
@@ -232,78 +310,9 @@ impl Font {
 			(17, 'X'),
 			(15, 'Y'),
 			(16, 'Z'),
+			(13, '?'),
 		])
 	};
-
-	const fn tiny_metric(ch: char) -> FontMetric {
-		let width = 3;
-		if !ch.is_ascii() {
-			return FontMetric {
-				glyph: 0,
-				pos: 0,
-				width: 0,
-			};
-		}
-		let ch8 = ch as u8;
-		if ch8 >= 'a' as u8 && ch8 <= 'z' as u8 {
-			return FontMetric {
-				width,
-				pos: 4 * ((ch8 - 'a' as u8) as u16),
-				glyph: ch8,
-			};
-		}
-		if ch8 >= 'A' as u8 && ch8 <= 'Z' as u8 {
-			return FontMetric {
-				width,
-				pos: 4 * ((ch8 - 'A' as u8) as u16),
-				glyph: ch8 + 32,
-			};
-		}
-		if ch8 >= '0' as u8 && ch8 <= '9' as u8 {
-			return FontMetric {
-				width,
-				pos: 4 * (26 + (ch8 - '0' as u8) as u16),
-				glyph: ch8,
-			};
-		}
-		match ch {
-			'-' => FontMetric {
-				width,
-				pos: 4 * 36,
-				glyph: ch8,
-			},
-			'+' => FontMetric {
-				width,
-				pos: 4 * 37,
-				glyph: ch8,
-			},
-			'!' => FontMetric {
-				width,
-				pos: 4 * 38,
-				glyph: ch8,
-			},
-			'.' => FontMetric {
-				width,
-				pos: 4 * 39,
-				glyph: ch8,
-			},
-			_ => FontMetric {
-				glyph: 0,
-				pos: 0,
-				width: 0,
-			},
-		}
-	}
-
-	const fn medium_metric(ch: char) -> FontMetric {
-		// if !ch.is_ascii() {
-		return FontMetric {
-			glyph: 0,
-			pos: 0,
-			width: 0,
-		};
-		// }
-	}
 
 	const fn big_metric(ch: char) -> FontMetric {
 		if !ch.is_ascii() {
@@ -327,6 +336,7 @@ impl Font {
 			',' => Self::BIG_METRICS[40],
 			'(' => Self::BIG_METRICS[42],
 			')' => Self::BIG_METRICS[43],
+			'?' => Self::BIG_METRICS[70],
 			_ => Self::BIG_METRICS[41],
 		}
 	}
@@ -339,7 +349,7 @@ impl Font {
 		}
 	}
 
-	pub const fn height(&self) -> u32 {
+	pub const fn height(&self) -> i32 {
 		match self {
 			Font::Tiny => 5,
 			Font::Medium => 9,
@@ -356,12 +366,12 @@ impl Font {
 	}
 }
 
-pub fn measure_string(font: Font, string: &str) -> (u32, u32) {
+pub fn measure_string(font: Font, string: &str) -> (i32, i32) {
 	let mut pos: u16 = 0;
 	let mut lines = 1;
 	let space = match font {
 		Font::Tiny => 2,
-		Font::Medium => 5,
+		Font::Medium => 4,
 		Font::Big => 6,
 	};
 	let line_spacing = match font {
@@ -398,19 +408,65 @@ pub fn measure_string(font: Font, string: &str) -> (u32, u32) {
 	(pos as _, font.height() * lines + line_spacing * (lines - 1))
 }
 
-pub fn draw_string(engine: &mut Metra, font: Font, string: &str, x: i32, y: i32, color: u32) -> (u32, u32) {
+#[derive(Copy, Clone)]
+pub struct StringDraw<'a> {
+	pub font: Font,
+	pub string: &'a str,
+	pub x: i32,
+	pub y: i32,
+	pub color: u32,
+	pub wave: bool,
+	pub wave_freq: f32,
+}
+
+impl<'a> StringDraw<'a> {
+	pub fn basic(font: Font, string: &'a str, x: i32, y: i32, color: u32) -> Self {
+		Self {
+			font,
+			string,
+			x,
+			y,
+			color,
+			wave: false,
+			wave_freq: 0.0,
+		}
+	}
+	pub fn wavy(font: Font, string: &'a str, x: i32, y: i32, color: u32, wave_freq: f32) -> Self {
+		Self {
+			font,
+			string,
+			x,
+			y,
+			color,
+			wave: true,
+			wave_freq,
+		}
+	}
+}
+
+pub fn draw_string(engine: &mut Metra, string_draw: StringDraw) -> (i32, i32) {
+	let StringDraw {
+		font,
+		string,
+		x,
+		y,
+		color,
+		wave,
+		wave_freq,
+	} = string_draw;
 	let mut lines = { string.chars().filter(|ch| *ch == '\n').count() as i32 };
 	let mut pos: u16 = 0;
 	let space = match font {
 		Font::Tiny => 2,
-		Font::Medium => 5,
+		Font::Medium => 4,
 		Font::Big => 6,
 	};
-	let y_offset = match font {
-		Font::Tiny => -1,
-		Font::Medium => 0,
-		Font::Big => -1,
-	};
+	let y_offset = -1;
+	// match font {
+	// 	Font::Tiny => -1,
+	// 	Font::Medium => -1,
+	// 	Font::Big => -1,
+	// };
 	let line_spacing = match font {
 		Font::Tiny => 1,
 		Font::Medium => 1,
@@ -421,6 +477,22 @@ pub fn draw_string(engine: &mut Metra, font: Font, string: &str, x: i32, y: i32,
 		Font::Medium => 1,
 		Font::Big => 1,
 	};
+	let mag = match font {
+		Font::Tiny => 1.2,
+		Font::Medium => 1.2,
+		Font::Big => 1.2,
+	};
+	let wave_width = match font {
+		Font::Tiny => 6.0,
+		Font::Medium => 5.0,
+		Font::Big => 24.0,
+	};
+	let wave_sharp = match font {
+		Font::Tiny => 1.0,
+		Font::Medium => 1.0,
+		Font::Big => 3.0,
+	};
+	let time = (engine.time() / 1000.0) as f32 * wave_freq;
 	for ch in string.chars() {
 		if ch == '\r' {
 			continue;
@@ -436,10 +508,17 @@ pub fn draw_string(engine: &mut Metra, font: Font, string: &str, x: i32, y: i32,
 		if font == Font::Big && ch == ',' {
 			pos = pos.saturating_sub(1);
 		};
+
+		let base_y = y + (lines) * (font.height() + line_spacing);
+
 		engine.draw(
 			font.sprite(),
 			pos as i32 + x,
-			y + (lines) * (font.height() as i32 + line_spacing),
+			if wave {
+				base_y + (powf(cosf(time + pos as f32 / wave_width), wave_sharp) * mag) as i32
+			} else {
+				base_y
+			},
 			metric.width as _,
 			font.height() as _,
 			metric.pos as _,

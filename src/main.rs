@@ -3,10 +3,10 @@
 
 mod articles;
 mod button;
-mod data;
 mod main_menu;
 mod office;
 mod text;
+mod trending;
 
 extern crate alloc;
 
@@ -16,13 +16,17 @@ use libm::pow;
 use log::info;
 use metra::prelude::*;
 
-#[derive(Copy, Clone, PartialEq)]
+const PALETTE_FG: u32 = 0x202428FF;
+const PALETTE_PINK: u32 = 0xD74885FF;
+const PALETTE_BG: u32 = 0xE6DECFFF;
+
+#[derive(Clone, PartialEq)]
 enum GameMode {
 	MainMenu(MainMenu),
 	Office(Office),
 }
 
-#[derive(Copy, Clone)]
+#[derive(Clone)]
 struct GameState {
 	mode: GameMode,
 }
@@ -55,7 +59,7 @@ fn draw_cursor(engine: &mut Metra) {
 		12,
 		if mouse.status { 15 } else { 4 },
 		0,
-		0xFFFFFFFF,
+		u32::MAX,
 	);
 }
 

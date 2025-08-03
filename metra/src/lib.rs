@@ -14,18 +14,15 @@ static DLMALLOC: dlmalloc::GlobalDlmalloc = dlmalloc::GlobalDlmalloc;
 use alloc::vec::Vec;
 use alloc::{boxed::Box};
 use base64::Engine;
-use core::num::NonZeroU32;
 use core::ptr::NonNull;
-use log::{debug, error, info, warn};
-use crate::resource::ResourceTarget;
+use log::{debug, error, warn};
 
 mod logger;
 pub mod prelude;
-pub mod resource;
 mod sys;
 
-pub const VIEWPORT_WIDTH: u32 = 240;
-pub const VIEWPORT_HEIGHT: u32 = 180;
+pub const VIEWPORT_WIDTH: i32 = 240;
+pub const VIEWPORT_HEIGHT: i32 = 180;
 
 pub struct Metra {
 	last_mouse_status: MouseStatus,
@@ -92,55 +89,6 @@ impl Metra {
 
 	#[inline]
 	pub(crate) fn update_internal(&mut self, _status: MetraStatus) {
-		fn iterate_targets<T>(
-			targets: &mut Vec<NonNull<ResourceTarget<T>>>,
-			func: fn(target: &mut T),
-		) {
-			targets.retain_mut(|a| unsafe {
-				// SAFETY: `a` is always allocated by a Box, ensuring proper alignment,
-				//		It will only ever be deallocated by this function
-				let target = a.as_mut();
-				match &mut target.data {
-					None => {
-						// remove from array and release resources.
-						// SAFETY: the NonNull will never be accessed again (removed from vec)
-						//		by the end of this block.
-						let boxed: Box<ResourceTarget<T>> = Box::from_raw(a.as_mut());
-						drop(boxed);
-						false
-					}
-					Some(data) => {
-						// run the closure and keep in the array
-						func(data);
-						true
-					}
-				}
-			});
-		}
-		//
-		// // self.universal_shader_uniform
-		// // 	.upload(&[UniversalShaderUniform {
-		// // 		time: unsafe { sys::get_time() as f32 },
-		// // 		transform: [1.0, 0.0, 0.0, 1.0],
-		// // 	}]);
-		//
-		// // TODO: use uniform blocks to share universal shader inputs (time/transform)!!!
-		// //		 you already added support for uniform buffers anyway
-		// iterate_targets(&mut self.meshes, |mesh| {
-		// 	// TODO: render mesh
-		// 	unsafe {
-		// 		sys::bind_vertex_array(mesh.model.vertex_array_handle);
-		// 		mesh.model.positions.bind();
-		// 		mesh.model.coordinates.bind();
-		// 		mesh.model.indices.bind();
-		// 		mesh.material.bind();
-		// 		// the multiplication is because each triangle is an element in the greater array
-		// 		let index_count = mesh.model.indices.len() as u32 * 3;
-		// 		sys::draw_triangles(index_count);
-		// 		debug!("drew mesh with {index_count} indices");
-		// 	}
-		// });
-		// // TODO: render everything!
 	}
 
 	/// Returns the time elapsed since the start of the game, in milliseconds.
@@ -154,7 +102,7 @@ impl Metra {
 	#[inline]
 	pub fn delta(&self) -> f64 {
 		let delta = (self.time() - self.last_time) / 1000.0;
-		info!("delta = {delta}");
+		// info!("delta = {delta}");
 		delta.clamp(0.0000001, 1.0 / 15.0)
 	}
 
@@ -196,7 +144,7 @@ impl Metra {
 	/// Returns a pseudo-random number from 0 to 1.
 	#[must_use]
 	#[inline]
-	pub fn random(&self) -> f64 {
+	pub fn random(&mut self) -> f64 {
 		unsafe { sys::get_random() }
 	}
 
@@ -272,8 +220,6 @@ macro_rules! metra_main {
 	};
 }
 
-pub struct MetraResourceManifest;
-
 /// This function initializes the Metra engine,
 /// and should only be called from within the [metra_main!] macro.
 // can you tell we're committing crimes against Rust?
@@ -318,12 +264,10 @@ pub fn run<T: 'static>(
 	unsafe {
 		UPDATE_FN = Some(Box::new(move || {
 
-			let new_mouse_status = unsafe {
-				MouseStatus {
-					x: sys::EXPOSED_MOUSE_POS_X,
-					y: sys::EXPOSED_MOUSE_POS_Y,
-					status: sys::EXPOSED_MOUSE_STATUS == 1
-				}
+			let new_mouse_status = MouseStatus {
+				x: sys::EXPOSED_MOUSE_POS_X,
+				y: sys::EXPOSED_MOUSE_POS_Y,
+				status: sys::EXPOSED_MOUSE_STATUS == 1
 			};
 			engine.last_mouse_status = engine.current_mouse_status;
 			engine.current_mouse_status = new_mouse_status;
